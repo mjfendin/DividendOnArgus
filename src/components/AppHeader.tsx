@@ -158,16 +158,12 @@ export function AppHeader({
 
 function LogoMark() {
   return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="32" height="32" rx="8" fill="var(--accent)" opacity="0.15" />
-      <circle cx="16" cy="13" r="6" fill="none" stroke="var(--accent)" strokeWidth="1.8" />
-      <circle cx="16" cy="13" r="2.5" fill="var(--accent)" />
-      <circle cx="10" cy="11" r="1.2" fill="var(--accent)" opacity="0.6" />
-      <circle cx="22" cy="11" r="1.2" fill="var(--accent)" opacity="0.6" />
-      <circle cx="16" cy="7" r="1.2" fill="var(--accent)" opacity="0.6" />
-      <circle cx="16" cy="19" r="1.2" fill="var(--accent)" opacity="0.6" />
-      <path d="M12 23 L16 22 L20 23" stroke="var(--accent)" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M10 26 L16 24 L22 26" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-    </svg>
+    <img
+      src="/logo-square.png"
+      alt="Dividend Portfolio Tracker"
+      width={32}
+      height={32}
+      style={{ borderRadius: 8, objectFit: 'cover' }}
+    />
   )
 }
