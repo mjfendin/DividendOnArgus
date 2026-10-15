@@ -65,21 +65,21 @@ export default function App() {
         }}
       >
         {/* Page title */}
-        <div style={{ marginBottom: 28 }}>
+        <div style={{ marginBottom: 32 }}>
           <h1
             className="display"
             style={{
-              fontSize: 28,
+              fontSize: 32,
               fontWeight: 700,
               color: 'var(--ink)',
               letterSpacing: '-0.03em',
               margin: 0,
-              marginBottom: 6,
+              marginBottom: 8,
             }}
           >
             Passive Income Dashboard
           </h1>
-          <p style={{ fontSize: 14, color: 'var(--subtle)', margin: 0 }}>
+          <p style={{ fontSize: 15, color: 'var(--subtle)', margin: 0, lineHeight: 1.6 }}>
             {lastUpdated
               ? `Last updated ${lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
               : 'Aggregated dividend income across all Argus tokens you hold'}

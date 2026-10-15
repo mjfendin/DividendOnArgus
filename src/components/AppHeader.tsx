@@ -23,9 +23,9 @@ export function AppHeader({
     <header
       style={{
         borderBottom: '1px solid var(--border)',
-        background: 'var(--surface)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        background: 'rgba(10, 14, 26, 0.72)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -35,35 +35,34 @@ export function AppHeader({
         style={{
           maxWidth: 1200,
           margin: '0 auto',
-          padding: '0 20px',
-          height: 64,
+          padding: '12px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
+          gap: 16,
         }}
       >
         {/* Logo + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
           <LogoMark />
           <div style={{ minWidth: 0 }}>
             <div
               className="display"
               style={{
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: 700,
                 color: 'var(--ink)',
                 letterSpacing: '-0.02em',
                 whiteSpace: 'nowrap',
               }}
             >
-              Dividend Portfolio Tracker
+              Dividend Tracker
             </div>
             <div
               style={{
                 fontSize: 11,
                 color: 'var(--subtle)',
-                letterSpacing: '0.07em',
+                letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 fontWeight: 600,
               }}
@@ -77,24 +76,9 @@ export function AppHeader({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* USDC balance pill */}
           {usdcBalance !== null && (
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: 'var(--muted)',
-                background: 'var(--surface-muted)',
-                border: '1px solid var(--border)',
-                borderRadius: 20,
-                padding: '4px 12px',
-                fontVariantNumeric: 'tabular-nums',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {balanceLoading ? (
-                <span style={{ opacity: 0.5 }}>Loading...</span>
-              ) : (
-                <>{formatUSDCAmount(usdcBalance)} USDC</>
-              )}
+            <div className="pill" style={{ whiteSpace: 'nowrap' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
+              {balanceLoading ? 'Loading…' : `${formatUSDCAmount(usdcBalance)} USDC`}
             </div>
           )}
 
@@ -104,24 +88,12 @@ export function AppHeader({
               onClick={onRefresh}
               disabled={refreshing}
               title="Refresh data"
-              style={{
-                background: 'none',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: '6px 8px',
-                cursor: refreshing ? 'not-allowed' : 'pointer',
-                color: 'var(--subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                opacity: refreshing ? 0.5 : 1,
-                transition: 'opacity 0.15s',
-              }}
+              className="btn btn-ghost"
+              style={{ padding: '8px 10px' }}
             >
               <RefreshCw
-                size={15}
-                style={{
-                  animation: refreshing ? 'spin 1s linear infinite' : 'none',
-                }}
+                size={16}
+                style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }}
               />
             </button>
           )}
@@ -130,18 +102,10 @@ export function AppHeader({
           <button
             onClick={onThemeToggle}
             title="Toggle theme"
-            style={{
-              background: 'none',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '6px 8px',
-              cursor: 'pointer',
-              color: 'var(--subtle)',
-              display: 'flex',
-              alignItems: 'center',
-            }}
+            className="btn btn-ghost"
+            style={{ padding: '8px 10px' }}
           >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           {/* Wallet button */}
@@ -161,9 +125,14 @@ function LogoMark() {
     <img
       src="/logo-square.png"
       alt="Dividend Portfolio Tracker"
-      width={56}
-      height={56}
-      style={{ borderRadius: '50%', objectFit: 'contain', display: 'block' }}
+      width={48}
+      height={48}
+      style={{
+        borderRadius: '50%',
+        objectFit: 'contain',
+        display: 'block',
+        boxShadow: '0 0 0 2px var(--border-strong), 0 4px 20px -4px rgba(139, 92, 246, 0.5)',
+      }}
     />
   )
 }
