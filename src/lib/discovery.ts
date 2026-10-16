@@ -1,29 +1,13 @@
 /**
- * Discovery features data layer.
+ * Discovery features data layer (client).
  *
- * Top dividend tokens & leaderboard are derived from real on-chain events —
- * TokenCreated logs from every Argus Portal, plus dividend payout logs from
- * resolvable splitters. Windowed scans avoid Arc RPC range limits. Results
- * are cached in-memory and persisted to localStorage for the session.
+ * Reads the server-side indexer cache from /api/discovery. The heavy on-chain
+ * scan runs in a Vercel serverless function (api/cron-refresh.ts), so the
+ * browser never performs large getLogs scans and never hits Arc RPC rate
+ * limits directly.
  */
 
 import { type Address } from 'viem'
-import {
-  ARGUS_PORTALS,
-  rpcClient,
-  getTokenInfo,
-  resolveSplitter,
-  getCurrentBlock,
-  USDC_DECIMALS,
-} from './argus-data'
-import { scanGlobalDividendEvents, type DividendEventRecord } from './dividend-events'
-
-const SCAN_WINDOW = 100n
-const MAX_WINDOWS_PER_PORTAL = 6n // fast initial scan
-const DELAY_BETWEEN_RPC_MS = 100
-const INITIAL_PORTALS = [7, 6] // newest portals first — historical ones only on force refresh
-
-const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
 export interface DiscoveredToken {
   token: Address
@@ -41,202 +25,56 @@ export interface LeaderboardEntry {
   payoutCount: number
 }
 
-// ---------------------------------------------------------------------------
-// TokenCreated log decoding (strings + bytes32)
-// ---------------------------------------------------------------------------
-async function decodeTokenCreatedLogs(
-  portalId: number,
-  fromBlock: bigint,
-  toBlock: bigint,
-): Promise<{ token: Address; poolId: string }[]> {
-  const portal = ARGUS_PORTALS.find((p) => p.id === portalId)
-  if (!portal) return []
-  const topic0 =
-    portal.family === 'hooked-v4'
-      ? '0x1d8917231579f8ce39407f0d616f36f357b07329b0ce5164d0754ac15145ce0a'
-      : '0x875522b092d9e19a1de359e4bd218090d582fa521c9733889acf1a5ff1941255'
+interface DiscoveryResponse {
+  tokens: Array<Omit<DiscoveredToken, 'totalPaid'> & { totalPaid: string }>
+  leaderboard: Array<Omit<LeaderboardEntry, 'totalReceived'> & { totalReceived: string }>
+  updatedAt: number | null
+  source?: string
+}
 
+const API_URL = '/api/discovery'
+
+function toBigInt(value: string): bigint {
   try {
-    const logs = await rpcClient.getLogs({
-      address: portal.address,
-      event: {
-        type: 'event',
-        name: 'TokenCreated',
-        inputs: [
-          { type: 'address', name: 'token', indexed: true },
-          { type: 'address', name: 'creator', indexed: true },
-          { type: 'string', name: 'name', indexed: false },
-          { type: 'string', name: 'symbol', indexed: false },
-          { type: 'bytes32', name: 'poolId', indexed: false },
-          { type: 'string', name: 'imageURI', indexed: false },
-          { type: 'string', name: 'website', indexed: false },
-          { type: 'string', name: 'twitter', indexed: false },
-          { type: 'string', name: 'telegram', indexed: false },
-        ],
-      },
-      fromBlock,
-      toBlock,
-    })
-    const out: { token: Address; poolId: string }[] = []
-    for (const log of logs) {
-      const token = `0x${(log.topics[1] ?? '').slice(-40)}` as Address
-      const data = log.data ?? '0x'
-      const poolId = `0x${data.slice(2, 66)}`
-      out.push({ token, poolId })
-    }
-    return out
+    return BigInt(value)
   } catch {
-    return []
+    return 0n
   }
 }
-
-// ---------------------------------------------------------------------------
-// Discovery cache (localStorage-backed)
-// ---------------------------------------------------------------------------
-interface DiscoveryCache {
-  updatedAt: number
-  tokens: Record<string, DiscoveredToken>
-  leaderboard: Record<string, LeaderboardEntry>
-}
-
-const CACHE_KEY = 'dividentonargus:discovery'
-const CACHE_TTL_MS = 15 * 60 * 1000
-
-function loadCache(): DiscoveryCache | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as DiscoveryCache
-    if (Date.now() - parsed.updatedAt > CACHE_TTL_MS) return null
-    return parsed
-  } catch {
-    return null
-  }
-}
-
-function saveCache(cache: DiscoveryCache) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cache))
-  } catch {
-    // ignore quota errors
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Public discovery API
-// ---------------------------------------------------------------------------
 
 /**
- * Discover Argus dividend tokens by scanning TokenCreated events across all
- * Portals (windowed) and resolving each splitter, then reading dividend logs.
+ * Fetch cached discovery data from the serverless indexer.
  */
-export async function discoverDividendTokens(force = false): Promise<{
+export async function discoverDividendTokens(): Promise<{
   tokens: DiscoveredToken[]
   leaderboard: LeaderboardEntry[]
-  updatedAt: number
+  updatedAt: number | null
+  source: string
 }> {
-  if (!force) {
-    const cached = loadCache()
-    if (cached) {
-      return {
-        tokens: Object.values(cached.tokens),
-        leaderboard: Object.values(cached.leaderboard),
-        updatedAt: cached.updatedAt,
-      }
-    }
+  const res = await fetch(API_URL, { cache: 'no-store' })
+  if (!res.ok) {
+    throw new Error(`Discovery API HTTP ${res.status}`)
   }
-
-  const tokens = new Map<Address, DiscoveredToken>()
-  const leaderboard = new Map<Address, LeaderboardEntry>()
-
-  const latest = await getCurrentBlock()
-  if (latest === 0n) {
-    const cache: DiscoveryCache = {
-      updatedAt: Date.now(),
-      tokens: {},
-      leaderboard: {},
-    }
-    saveCache(cache)
-    return { tokens: [], leaderboard: [], updatedAt: cache.updatedAt }
-  }
-
-  const portalsToScan = force ? ARGUS_PORTALS : ARGUS_PORTALS.filter(p => INITIAL_PORTALS.includes(p.id))
-
-  for (const portal of portalsToScan) {
-    const fromBlock = latest > portal.startBlock + MAX_WINDOWS_PER_PORTAL * SCAN_WINDOW
-      ? latest - MAX_WINDOWS_PER_PORTAL * SCAN_WINDOW
-      : portal.startBlock
-
-    let windowStart = fromBlock
-    let rateLimited = false
-    while (windowStart < latest && !rateLimited) {
-      const windowEnd = (windowStart + SCAN_WINDOW > latest ? latest : windowStart + SCAN_WINDOW)
-      let created: { token: Address; poolId: string }[] = []
-      try {
-        created = await decodeTokenCreatedLogs(portal.id, windowStart, windowEnd)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        if (msg.includes('rate limit') || msg.includes('32005') || msg.includes('Failed to fetch')) {
-          rateLimited = true
-          break
-        }
-      }
-      await sleep(DELAY_BETWEEN_RPC_MS)
-      for (const { token } of created) {
-        if (tokens.has(token)) continue
-        const info = await getTokenInfo(token)
-        await sleep(DELAY_BETWEEN_RPC_MS)
-        if (!info) continue
-        const splitter = await resolveSplitter(token)
-        await sleep(DELAY_BETWEEN_RPC_MS)
-        const entry: DiscoveredToken = {
-          token,
-          name: info.name,
-          symbol: info.symbol,
-          portalId: portal.id,
-          splitter,
-          totalPaid: 0n,
-          payoutCount: 0,
-        }
-        if (splitter) {
-          try {
-            const events = await scanGlobalDividendEvents(splitter, portal.startBlock, latest)
-            entry.totalPaid = events.reduce((acc, e) => acc + e.amount, 0n)
-            entry.payoutCount = events.length
-            for (const e of events) {
-              const lb = leaderboard.get(e.recipient) ?? {
-                address: e.recipient,
-                totalReceived: 0n,
-                payoutCount: 0,
-              }
-              lb.totalReceived += e.amount
-              lb.payoutCount += 1
-              leaderboard.set(e.recipient, lb)
-            }
-          } catch {
-            // splitter scan hit rate limit — keep entry with zero payouts
-          }
-          await sleep(DELAY_BETWEEN_RPC_MS)
-        }
-        tokens.set(token, entry)
-      }
-      windowStart = windowEnd
-    }
-  }
-
-  const cache: DiscoveryCache = {
-    updatedAt: Date.now(),
-    tokens: Object.fromEntries(tokens),
-    leaderboard: Object.fromEntries(leaderboard),
-  }
-  saveCache(cache)
+  const data = (await res.json()) as DiscoveryResponse
 
   return {
-    tokens: Array.from(tokens.values()),
-    leaderboard: Array.from(leaderboard.values()),
-    updatedAt: cache.updatedAt,
+    tokens: (data.tokens ?? []).map(t => ({
+      token: t.token as Address,
+      name: t.name,
+      symbol: t.symbol,
+      portalId: t.portalId,
+      splitter: (t.splitter as Address | null) ?? null,
+      totalPaid: toBigInt(t.totalPaid),
+      payoutCount: t.payoutCount,
+    })),
+    leaderboard: (data.leaderboard ?? []).map(l => ({
+      address: l.address as Address,
+      totalReceived: toBigInt(l.totalReceived),
+      payoutCount: l.payoutCount,
+    })),
+    updatedAt: data.updatedAt,
+    source: data.source ?? 'unknown',
   }
 }
 
-export { USDC_DECIMALS }
-export type { DividendEventRecord }
+export { USDC_DECIMALS } from '@/lib/argus-data'

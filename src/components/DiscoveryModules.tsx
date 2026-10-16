@@ -132,7 +132,7 @@ export function TopDividendTokens({
       subtitle="By on-chain payouts across Argus Portals"
       loading={loading}
       error={error}
-      onRefresh={() => void refetch(true)}
+      onRefresh={() => void refetch()}
       emptyText="No dividend payouts discovered yet"
     >
       {sorted.map((t, i) => (
@@ -200,7 +200,7 @@ export function LeaderboardEarners() {
       subtitle="Wallets with the most dividends received"
       loading={loading}
       error={error}
-      onRefresh={() => void refetch(true)}
+      onRefresh={() => void refetch()}
       emptyText="No dividend recipients discovered yet"
     >
       {sorted.map((e, i) => (
@@ -274,7 +274,7 @@ export function LiveDividendFeed({
       subtitle="Your latest on-chain dividend receipts"
       loading={loading}
       error={error}
-      onRefresh={() => void refetch(true)}
+      onRefresh={() => void refetch()}
       emptyText="Connect your wallet to see your dividend feed"
     >
       {feed.slice(0, 6).map((f, i) => (
