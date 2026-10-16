@@ -9,6 +9,7 @@ import { TokenTable } from './components/TokenTable'
 import { EmptyState } from './components/EmptyState'
 import { WrongNetworkBanner } from './components/WrongNetwork'
 import { TopDividendTokens, useWatchlist } from './components/DiscoveryModules'
+import { DividendHero } from './components/DividendHero'
 import {
   useDividendData,
   useUSDCBalance,
@@ -102,6 +103,9 @@ export default function App() {
         {isConnected && !isOnArc && (
           <EmptyState type="wrong-network" onSwitchNetwork={handleSwitchToArc} />
         )}
+
+        {/* $DIVIDEND hero — token utama */}
+        <DividendHero />
 
         {/* Discovery modules — visible without wallet (public data) */}
         <div style={{ marginBottom: 24 }}>

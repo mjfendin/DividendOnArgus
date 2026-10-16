@@ -127,7 +127,9 @@ export function TopDividendTokens({
   const sorted = [...tokens]
     .filter(t => (t.dividendBps ?? 0) > 0)
     .sort((a, b) => {
-      // DIVIDEND flagship always first
+      // DIVIDEND (CA 0xE9b7...) flagship always first
+      if (a.token.toLowerCase() === '0xe9b7a558d7d46018a4a9bc32c249338d4aaeca6e') return -1
+      if (b.token.toLowerCase() === '0xe9b7a558d7d46018a4a9bc32c249338d4aaeca6e') return 1
       if (a.symbol === 'DIVIDEND') return -1
       if (b.symbol === 'DIVIDEND') return 1
       // Then sort by dividends allocation (highest % first)
