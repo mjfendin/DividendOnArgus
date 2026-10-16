@@ -19,6 +19,7 @@ export interface DiscoveredToken {
   payoutCount: number
   buyTaxBps?: number
   sellTaxBps?: number
+  dividendBps?: number
   notDeployed?: boolean
 }
 
@@ -71,6 +72,7 @@ export async function discoverDividendTokens(): Promise<{
       payoutCount: t.payoutCount,
       buyTaxBps: t.buyTaxBps,
       sellTaxBps: t.sellTaxBps,
+      dividendBps: t.dividendBps,
       notDeployed: t.notDeployed,
     })),
     leaderboard: (data.leaderboard ?? []).map(l => ({

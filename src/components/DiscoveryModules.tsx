@@ -124,13 +124,16 @@ export function TopDividendTokens({
 }) {
   const { tokens, loading, error, refetch } = useDiscovery()
 
-  const sorted = [...tokens].sort((a, b) => {
-    // DIVIDEND flagship always first
-    if (a.symbol === 'DIVIDEND') return -1
-    if (b.symbol === 'DIVIDEND') return 1
-    // Then sort by total tax (higher tax = more dividend potential)
-    return (b.buyTaxBps ?? 0) + (b.sellTaxBps ?? 0) - ((a.buyTaxBps ?? 0) + (a.sellTaxBps ?? 0))
-  }).slice(0, 6)
+  const sorted = [...tokens]
+    .filter(t => (t.dividendBps ?? 0) > 0)
+    .sort((a, b) => {
+      // DIVIDEND flagship always first
+      if (a.symbol === 'DIVIDEND') return -1
+      if (b.symbol === 'DIVIDEND') return 1
+      // Then sort by dividends allocation (highest % first)
+      return (b.dividendBps ?? 0) - (a.dividendBps ?? 0)
+    })
+    .slice(0, 5)
 
   return (
     <DiscoveryCard
@@ -195,9 +198,11 @@ export function TopDividendTokens({
               color: 'var(--success)',
             }}
           >
-            {t.buyTaxBps !== undefined && t.sellTaxBps !== undefined
-              ? `Tax ${(t.buyTaxBps / 100).toFixed(2)}/${(t.sellTaxBps / 100).toFixed(2)}%`
-              : '—'}
+            {t.dividendBps !== undefined
+              ? `Dividends ${(t.dividendBps / 100).toFixed(0)}%`
+              : t.buyTaxBps !== undefined && t.sellTaxBps !== undefined
+                ? `Tax ${(t.buyTaxBps / 100).toFixed(2)}/${(t.sellTaxBps / 100).toFixed(2)}%`
+                : '—'}
           </span>
           <button
             onClick={() => onWatch(t.token)}
