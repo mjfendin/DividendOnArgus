@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import * as React from 'react'
 import { Flame, Eye, EyeOff, Trophy, Radio } from 'lucide-react'
 import type { Address } from 'viem'
 import { formatUSDCAmount, type TokenHolding } from '../hooks/useDividendData'
@@ -123,10 +124,7 @@ export function TopDividendTokens({
 }) {
   const { tokens, loading, error, refetch } = useDiscovery()
 
-  const sorted = [...tokens]
-    .filter(t => t.payoutCount > 0)
-    .sort((a, b) => (b.totalPaid > a.totalPaid ? 1 : -1))
-    .slice(0, 5)
+  const sorted = [...tokens].sort((a, b) => (b.totalPaid > a.totalPaid ? 1 : -1)).slice(0, 5)
 
   return (
     <DiscoveryCard
@@ -394,7 +392,7 @@ function DiscoveryCard({
       ) : (
         <div style={{ minHeight: 40 }}>
           {children}
-          {!loading && !error && (
+          {!loading && !error && React.Children.count(children) === 0 && (
             <span style={{ fontSize: 11, color: 'var(--subtle)', display: 'block', marginTop: 8 }}>
               {emptyText}
             </span>

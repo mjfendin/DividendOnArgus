@@ -26,7 +26,11 @@ import { formatUnitsFixed } from '@/onchain-money'
 
 export const rpcClient = createPublicClient({
   chain: arc,
-  transport: http(arc.rpcUrls.default.http[0]),
+  transport: http(arc.rpcUrls.default.http[0] + '/', {
+    batch: false,
+    retryCount: 3,
+    retryDelay: 500,
+  }),
 })
 
 export const USDC_ADDRESS: Address = '0x3600000000000000000000000000000000000000'
@@ -151,7 +155,26 @@ export const BLOCKS_30D = 2_592_000n
 export const BLOCKS_7D = 604_800n
 export const BLOCKS_24H = 86_400n
 
+const RPC_FALLBACKS = [
+  'https://rpc.mainnet.arc.io',
+  'https://rpc.blockdaemon.mainnet.arc.io',
+  'https://rpc.drpc.mainnet.arc.io',
+  'https://rpc.quicknode.mainnet.arc.io',
+]
+
 export async function getCurrentBlock(): Promise<bigint> {
+  for (const url of RPC_FALLBACKS) {
+    try {
+      const client = createPublicClient({
+        chain: arc,
+        transport: http(url + '/', { batch: false, retryCount: 2, retryDelay: 400 }),
+      })
+      const block = await client.getBlockNumber()
+      if (block > 0n) return block
+    } catch {
+      // try next fallback
+    }
+  }
   try {
     return await rpcClient.getBlockNumber()
   } catch {

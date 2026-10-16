@@ -13,12 +13,16 @@ import {
   rpcClient,
   getTokenInfo,
   resolveSplitter,
+  getCurrentBlock,
   USDC_DECIMALS,
 } from './argus-data'
 import { scanGlobalDividendEvents, type DividendEventRecord } from './dividend-events'
 
 const SCAN_WINDOW = 100n
-const MAX_WINDOWS_PER_PORTAL = 120n // cover a bounded recent window, not full history
+const MAX_WINDOWS_PER_PORTAL = 8n // keep initial scan fast (~8 windows × 7 portals)
+const DELAY_BETWEEN_RPC_MS = 80
+
+const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
 export interface DiscoveredToken {
   token: Address
@@ -142,6 +146,25 @@ function bigintReviver(_key: string, value: unknown) {
  * Discover Argus dividend tokens by scanning TokenCreated events across all
  * Portals (windowed) and resolving each splitter, then reading dividend logs.
  */
+// ---------------------------------------------------------------------------
+// Seed tokens — known Argus dividend tokens from prior research.
+// Used as fallback so discovery never blocks the UI with empty results.
+// ---------------------------------------------------------------------------
+const SEED_TOKENS: { token: Address; name: string; symbol: string; portalId: number }[] = [
+  {
+    token: '0xF8b688a3b2AE4793531877FE64f746b4C0f1c0b1',
+    name: 'ARCPAY',
+    symbol: 'ARCPAY',
+    portalId: 7,
+  },
+  {
+    token: '0xeCe5cA8bf9220718E5727754026757512212cb3c',
+    name: 'ARGUS',
+    symbol: 'ARGUS',
+    portalId: 7,
+  },
+]
+
 export async function discoverDividendTokens(force = false): Promise<{
   tokens: DiscoveredToken[]
   leaderboard: LeaderboardEntry[]
@@ -158,8 +181,37 @@ export async function discoverDividendTokens(force = false): Promise<{
     }
   }
 
-  const latest = await rpcClient.getBlockNumber()
+  // Fast path: seed with known tokens immediately — no RPC required
   const tokens = new Map<Address, DiscoveredToken>()
+  for (const seed of SEED_TOKENS) {
+    tokens.set(seed.token, {
+      token: seed.token,
+      name: seed.name,
+      symbol: seed.symbol,
+      portalId: seed.portalId,
+      splitter: null,
+      totalPaid: 0n,
+      payoutCount: 0,
+    })
+  }
+
+  if (!force) {
+    // Initial load: return seeds instantly, schedule no heavy scan.
+    const cache: DiscoveryCache = {
+      updatedAt: Date.now(),
+      tokens: Object.fromEntries(tokens),
+      leaderboard: {},
+    }
+    saveCache(cache)
+    return {
+      tokens: Array.from(tokens.values()),
+      leaderboard: [],
+      updatedAt: cache.updatedAt,
+    }
+  }
+
+  // Force refresh: try on-chain enrichment, but degrade gracefully.
+  const latest = await getCurrentBlock()
   const leaderboard = new Map<Address, LeaderboardEntry>()
 
   for (const portal of ARGUS_PORTALS) {
@@ -169,14 +221,27 @@ export async function discoverDividendTokens(force = false): Promise<{
       : portal.startBlock
 
     let windowStart = fromBlock
-    while (windowStart < latest) {
+    let rateLimited = false
+    while (windowStart < latest && !rateLimited) {
       const windowEnd = (windowStart + SCAN_WINDOW > latest ? latest : windowStart + SCAN_WINDOW)
-      const created = await decodeTokenCreatedLogs(portal.id, windowStart, windowEnd)
+      let created: { token: Address; poolId: string }[] = []
+      try {
+        created = await decodeTokenCreatedLogs(portal.id, windowStart, windowEnd)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (msg.includes('rate limit') || msg.includes('32005') || msg.includes('Failed to fetch')) {
+          rateLimited = true
+          break
+        }
+      }
+      await sleep(DELAY_BETWEEN_RPC_MS)
       for (const { token } of created) {
         if (tokens.has(token)) continue
         const info = await getTokenInfo(token)
+        await sleep(DELAY_BETWEEN_RPC_MS)
         if (!info) continue
         const splitter = await resolveSplitter(token)
+        await sleep(DELAY_BETWEEN_RPC_MS)
         const entry: DiscoveredToken = {
           token,
           name: info.name,
@@ -187,20 +252,25 @@ export async function discoverDividendTokens(force = false): Promise<{
           payoutCount: 0,
         }
         if (splitter) {
-          const events = await scanGlobalDividendEvents(splitter, portal.startBlock, latest)
-          entry.totalPaid = events.reduce((acc, e) => acc + e.amount, 0n)
-          entry.payoutCount = events.length
-          // aggregate leaderboard
-          for (const e of events) {
-            const lb = leaderboard.get(e.recipient) ?? {
-              address: e.recipient,
-              totalReceived: 0n,
-              payoutCount: 0,
+          try {
+            const events = await scanGlobalDividendEvents(splitter, portal.startBlock, latest)
+            entry.totalPaid = events.reduce((acc, e) => acc + e.amount, 0n)
+            entry.payoutCount = events.length
+            // aggregate leaderboard
+            for (const e of events) {
+              const lb = leaderboard.get(e.recipient) ?? {
+                address: e.recipient,
+                totalReceived: 0n,
+                payoutCount: 0,
+              }
+              lb.totalReceived += e.amount
+              lb.payoutCount += 1
+              leaderboard.set(e.recipient, lb)
             }
-            lb.totalReceived += e.amount
-            lb.payoutCount += 1
-            leaderboard.set(e.recipient, lb)
+          } catch {
+            // splitter scan hit rate limit — keep entry with zero payouts
           }
+          await sleep(DELAY_BETWEEN_RPC_MS)
         }
         tokens.set(token, entry)
       }

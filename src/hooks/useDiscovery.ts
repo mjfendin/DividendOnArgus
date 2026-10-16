@@ -29,8 +29,23 @@ export function useDiscovery() {
 
   const fetchDiscovery = useCallback(async (force = false) => {
     setState(prev => ({ ...prev, loading: true, error: null }))
+
+    // Timeout guard: if the scan takes too long, show empty state
+    const timeout = setTimeout(() => {
+      setState(prev =>
+        prev.loading
+          ? {
+              ...prev,
+              loading: false,
+              error: 'Scan timed out. Try refreshing in a moment.',
+            }
+          : prev,
+      )
+    }, 25000)
+
     try {
       const res = await discoverDividendTokens(force)
+      clearTimeout(timeout)
       setState({
         tokens: res.tokens,
         leaderboard: res.leaderboard,
@@ -39,6 +54,7 @@ export function useDiscovery() {
         updatedAt: res.updatedAt,
       })
     } catch (err) {
+      clearTimeout(timeout)
       setState(prev => ({
         ...prev,
         loading: false,
