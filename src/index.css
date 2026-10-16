@@ -2,23 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dividend Portfolio Tracker — premium fintech tokens */
+/* Dividend Portfolio Tracker — UI/UX Pro Max design system
+   Palette: Fintech/Crypto (gold trust + purple tech)
+   Type: Corporate Trust (Lexend + Source Sans 3) */
+
 :root {
-  --bg: #0a0e1a;
-  --bg-gradient: radial-gradient(1200px 800px at 50% -20%, #1a1035 0%, #0a0e1a 55%, #0a0e1a 100%);
+  /* Color tokens from UI/UX Pro Max: Fintech/Crypto */
+  --primary: #f59e0b;
+  --on-primary: #0f172a;
+  --secondary: #fbbf24;
+  --on-secondary: #0f172a;
+  --accent: #8b5cf6;
+  --on-accent: #ffffff;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #222735;
+  --card-foreground: #f8fafc;
+  --muted: #272f42;
+  --muted-foreground: #94a3b8;
+  --border: #334155;
+  --destructive: #ef4444;
+  --on-destructive: #ffffff;
+  --ring: #f59e0b;
+
+  /* Legacy aliases for existing components */
+  --bg: var(--background);
+  --bg-gradient: radial-gradient(1200px 800px at 50% -20%, #1a1035 0%, #0f172a 55%, #0f172a 100%);
   --surface: rgba(255, 255, 255, 0.04);
   --surface-strong: rgba(255, 255, 255, 0.07);
-  --surface-muted: rgba(255, 255, 255, 0.03);
-  --ink: #f5f7fb;
+  --surface-muted: var(--card);
+  --ink: var(--foreground);
   --ink-2: #e6ebf5;
-  --muted: #a6b0c3;
+  --muted: var(--muted-foreground);
   --subtle: #7b8499;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: var(--border);
   --border-strong: rgba(255, 255, 255, 0.16);
-  --accent: #8b5cf6;
+  --accent: var(--accent);
   --accent-hover: #a78bfa;
   --success: #34d399;
-  --danger: #f87171;
+  --danger: var(--destructive);
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 10px;
@@ -26,18 +48,35 @@
 }
 
 [data-theme="light"] {
-  --bg: #f8fafc;
+  --primary: #b45309;
+  --on-primary: #ffffff;
+  --secondary: #d97706;
+  --on-secondary: #ffffff;
+  --accent: #7c3aed;
+  --on-accent: #ffffff;
+  --background: #f8fafc;
+  --foreground: #020617;
+  --card: #ffffff;
+  --card-foreground: #020617;
+  --muted: #e8ecf1;
+  --muted-foreground: #475569;
+  --border: #e2e8f0;
+  --destructive: #dc2626;
+  --on-destructive: #ffffff;
+  --ring: #b45309;
+
+  --bg: var(--background);
   --bg-gradient: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   --surface: rgba(255, 255, 255, 0.8);
   --surface-strong: rgba(255, 255, 255, 0.95);
   --surface-muted: #f1f5f9;
-  --ink: #0f172a;
+  --ink: var(--foreground);
   --ink-2: #334155;
-  --muted: #64748b;
+  --muted: var(--muted-foreground);
   --subtle: #94a3b8;
   --border: rgba(15, 23, 42, 0.08);
   --border-strong: rgba(15, 23, 42, 0.16);
-  --accent: #7c3aed;
+  --accent: var(--accent);
   --accent-hover: #6d28d9;
   --success: #059669;
   --danger: #dc2626;
@@ -50,7 +89,7 @@
 
 body {
   margin: 0;
-  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
   min-height: 100dvh;
   background: var(--bg-gradient);
   color: var(--ink);
@@ -59,7 +98,7 @@ body {
 }
 
 .display {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Lexend', sans-serif;
   letter-spacing: -0.03em;
 }
 
@@ -93,7 +132,7 @@ body {
   padding: 10px 18px;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Source Sans 3', sans-serif;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s, transform 0.15s;
   white-space: nowrap;
@@ -110,7 +149,7 @@ body {
 
 .btn-primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .btn-primary:hover {
