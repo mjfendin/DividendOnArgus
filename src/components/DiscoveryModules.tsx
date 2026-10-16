@@ -129,7 +129,7 @@ export function TopDividendTokens({
   return (
     <DiscoveryCard
       title="Top Dividend Tokens"
-      subtitle="By on-chain payouts across Argus Portals"
+      subtitle="Tradeable launches on Argus Portal #7"
       loading={loading}
       error={error}
       onRefresh={() => void refetch()}
@@ -163,18 +163,20 @@ export function TopDividendTokens({
             <div style={{ fontSize: 12, color: 'var(--subtle)' }}>
               {t.notDeployed
                 ? `${t.token.slice(0, 6)}…${t.token.slice(-4)} — contract not yet deployed`
-                : `${t.payoutCount} payouts`}
+                : `${t.name}`}
             </div>
           </div>
           <span
             className="tabular"
             style={{
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 600,
-              color: t.notDeployed ? 'var(--subtle)' : 'var(--success)',
+              color: 'var(--accent)',
             }}
           >
-            {t.notDeployed ? '—' : formatUSDCAmount(t.totalPaid)}
+            {t.buyTaxBps !== undefined && t.sellTaxBps !== undefined
+              ? `Tax ${(t.buyTaxBps / 100).toFixed(2)}/${(t.sellTaxBps / 100).toFixed(2)}%`
+              : '—'}
           </span>
           <button
             onClick={() => onWatch(t.token)}
