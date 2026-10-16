@@ -120,13 +120,13 @@ function LogoMark() {
     <img
       src="/logo-square.png"
       alt="Dividend Portfolio Tracker"
-      width={48}
-      height={48}
+      width={64}
+      height={64}
       style={{
-        borderRadius: '50%',
+        borderRadius: 8,
         objectFit: 'contain',
         display: 'block',
-        border: '1px solid var(--border-strong)',
+        background: 'transparent',
       }}
     />
   )
