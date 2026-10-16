@@ -1,6 +1,6 @@
 /**
  * Netlify Function — discovery
- * Serves verified Argus dividend token data (same source as Vercel _scan.ts).
+ * Serves verified Argus dividend token data.
  */
 
 const VERIFIED_TOKENS = [
@@ -11,20 +11,18 @@ const VERIFIED_TOKENS = [
   { token: '0xafff46c8bf5a6951bd34de332a9d71f3df347ac3', name: 'DANTE', symbol: 'DANTE', portalId: 7, splitter: '0xeb29dc9bdea0e4e27d7b9a63cd6e9e0a19e84f4a', totalPaid: '0', payoutCount: 0, buyTaxBps: 100, sellTaxBps: 100, dividendBps: 2500 },
 ]
 
-export default async function handler(_req) {
-  return new Response(
-    JSON.stringify({
+export async function handler(_event) {
+  return {
+    statusCode: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+    },
+    body: JSON.stringify({
       tokens: VERIFIED_TOKENS,
       leaderboard: [],
       updatedAt: Date.now(),
       source: 'netlify-verified-static',
     }),
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    },
-  )
+  }
 }
