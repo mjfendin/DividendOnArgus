@@ -70,9 +70,9 @@ export default function App() {
             className="display"
             style={{
               fontSize: 32,
-              fontWeight: 700,
+              fontWeight: 400,
               color: 'var(--ink)',
-              letterSpacing: '-0.03em',
+              letterSpacing: 0,
               margin: 0,
               marginBottom: 8,
             }}
