@@ -28,5 +28,3 @@ export default async function handler(_req) {
     },
   )
 }
-
-export const config = { path: '/api/discovery' }

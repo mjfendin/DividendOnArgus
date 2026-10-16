@@ -52,5 +52,3 @@ export default async function handler(req) {
     { status: 502, headers: { 'Content-Type': 'application/json' } },
   )
 }
-
-export const config = { path: '/api/rpc' }
