@@ -19,13 +19,11 @@ function StatCard({ label, value, sublabel, icon, accent }: CardProps) {
   return (
     <div
       style={{
-        background: accent ? 'var(--surface-strong)' : 'var(--surface)',
-        border: `1px solid ${accent ? 'var(--border-strong)' : 'var(--border)'}`,
-        borderRadius: 'var(--radius-lg)',
+        background: accent ? 'var(--color-iris-gleam)' : 'var(--surface)',
+        border: accent ? 'none' : '1px solid var(--border)',
+        borderRadius: 16,
         padding: '20px 24px',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        boxShadow: 'var(--shadow-card)',
+        boxShadow: 'none',
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
@@ -43,30 +41,31 @@ function StatCard({ label, value, sublabel, icon, accent }: CardProps) {
         <span
           style={{
             fontSize: 11,
-            fontWeight: 700,
+            fontWeight: 500,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
-            color: 'var(--subtle)',
+            fontFamily: "'Roboto Mono', monospace",
+            color: accent ? 'rgba(255,255,255,0.85)' : 'var(--subtle)',
           }}
         >
           {label}
         </span>
-        <span style={{ color: 'var(--accent)', opacity: 0.7 }}>{icon}</span>
+        <span style={{ color: accent ? 'rgba(255,255,255,0.9)' : 'var(--accent)', opacity: 0.7 }}>{icon}</span>
       </div>
       <div
         className="display tabular"
         style={{
           fontSize: 28,
-          fontWeight: 700,
-          color: 'var(--ink)',
-          letterSpacing: '-0.03em',
+          fontWeight: 400,
+          color: accent ? '#ffffff' : 'var(--ink)',
+          letterSpacing: 0,
           lineHeight: 1.1,
         }}
       >
         {value}
       </div>
       {sublabel && (
-        <div style={{ fontSize: 12, color: 'var(--subtle)', marginTop: -2 }}>
+        <div style={{ fontSize: 12, color: accent ? 'rgba(255,255,255,0.85)' : 'var(--subtle)', marginTop: -2 }}>
           {sublabel}
         </div>
       )}

@@ -23,9 +23,9 @@ export function AppHeader({
     <header
       style={{
         borderBottom: '1px solid var(--border)',
-        background: 'rgba(10, 14, 26, 0.72)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: 'rgba(15, 16, 17, 0.72)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -49,23 +49,18 @@ export function AppHeader({
             <div
               className="display"
               style={{
-                fontSize: 18,
-                fontWeight: 700,
+                fontSize: 20,
+                fontWeight: 400,
                 color: 'var(--ink)',
-                letterSpacing: '-0.02em',
+                letterSpacing: 0,
                 whiteSpace: 'nowrap',
               }}
             >
               Dividend Tracker
             </div>
             <div
-              style={{
-                fontSize: 11,
-                color: 'var(--subtle)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                fontWeight: 600,
-              }}
+              className="eyebrow"
+              style={{ fontSize: 10 }}
             >
               Arc Mainnet
             </div>
@@ -131,7 +126,7 @@ function LogoMark() {
         borderRadius: '50%',
         objectFit: 'contain',
         display: 'block',
-        boxShadow: '0 0 0 2px var(--border-strong), 0 4px 20px -4px rgba(139, 92, 246, 0.5)',
+        border: '1px solid var(--border-strong)',
       }}
     />
   )

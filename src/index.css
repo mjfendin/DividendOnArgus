@@ -2,85 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Dividend Portfolio Tracker — UI/UX Pro Max design system
-   Palette: Fintech/Crypto (gold trust + purple tech)
-   Type: Corporate Trust (Lexend + Source Sans 3) */
+/* Dividend Portfolio Tracker — DESIGN.md "Origin Financial"
+   Midnight gallery of quiet wealth: near-black canvas, whisper-weight serif
+   display, luminous color panels as category tiles, flat elevation via
+   surface color steps (not shadows). */
 
 :root {
-  /* Color tokens from UI/UX Pro Max: Fintech/Crypto */
-  --primary: #f59e0b;
-  --on-primary: #0f172a;
-  --secondary: #fbbf24;
-  --on-secondary: #0f172a;
-  --accent: #8b5cf6;
-  --on-accent: #ffffff;
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --card: #222735;
-  --card-foreground: #f8fafc;
-  --muted: #272f42;
-  --muted-foreground: #94a3b8;
-  --border: #334155;
-  --destructive: #ef4444;
-  --on-destructive: #ffffff;
-  --ring: #f59e0b;
+  /* Chromatic accents — reserved for feature/category tiles and data signals */
+  --color-iris-gleam: #847dff;
+  --color-cyan-signal: #00b3dd;
+  --color-pale-iris: #d1c9ff;
+  --color-deep-iris: #4b49aa;
+  --color-orchid-bloom: #dd90d8;
+  --color-periwinkle: #90b8f0;
 
-  /* Legacy aliases for existing components */
-  --bg: var(--background);
-  --bg-gradient: radial-gradient(1200px 800px at 50% -20%, #1a1035 0%, #0f172a 55%, #0f172a 100%);
-  --surface: rgba(255, 255, 255, 0.04);
-  --surface-strong: rgba(255, 255, 255, 0.07);
-  --surface-muted: var(--card);
-  --ink: var(--foreground);
-  --ink-2: #e6ebf5;
-  --muted: var(--muted-foreground);
-  --subtle: #7b8499;
-  --border: var(--border);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --accent: var(--accent);
-  --accent-hover: #a78bfa;
-  --success: #34d399;
-  --danger: var(--destructive);
-  --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
-  --shadow-card: 0 1px 2px rgba(0,0,0,0.2), 0 8px 32px -12px rgba(0,0,0,0.5);
+  /* Neutral surfaces — flat, stepped */
+  --color-obsidian: #0f1011;
+  --color-abyss: #090a0b;
+  --color-graphite: #2e2e2e;
+  --color-steel: #3f4041;
+  --color-silver: #cacaca;
+  --color-fog: #6a6b6b;
+  --color-ash: #9f9fa0;
+  --color-cloud: #f5f5f7;
+  --color-pure: #ffffff;
+  --color-void: #000000;
+
+  /* Legacy aliases so existing components re-skin without logic changes */
+  --bg: var(--color-obsidian);
+  --bg-gradient: linear-gradient(180deg, #0f1011 0%, #090a0b 100%);
+  --surface: #171819;
+  --surface-strong: #1e1f20;
+  --surface-muted: #141516;
+  --ink: var(--color-pure);
+  --ink-2: var(--color-cloud);
+  --muted: var(--color-ash);
+  --subtle: var(--color-fog);
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --accent: var(--color-iris-gleam);
+  --accent-hover: var(--color-pale-iris);
+  --success: #5dd6a8;
+  --danger: #ff7b7b;
+
+  /* Radius — 8px controls, 16-30px cards, pill only for true chips */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 9999px;
+
+  /* Flat elevation — one shadow only, never on cards */
+  --shadow-lg: rgba(0, 0, 0, 0.2) 0px 18px 20px 0px;
 }
 
 [data-theme="light"] {
-  --primary: #b45309;
-  --on-primary: #ffffff;
-  --secondary: #d97706;
-  --on-secondary: #ffffff;
-  --accent: #7c3aed;
-  --on-accent: #ffffff;
-  --background: #f8fafc;
-  --foreground: #020617;
-  --card: #ffffff;
-  --card-foreground: #020617;
-  --muted: #e8ecf1;
-  --muted-foreground: #475569;
-  --border: #e2e8f0;
-  --destructive: #dc2626;
-  --on-destructive: #ffffff;
-  --ring: #b45309;
-
-  --bg: var(--background);
-  --bg-gradient: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  --surface: rgba(255, 255, 255, 0.8);
-  --surface-strong: rgba(255, 255, 255, 0.95);
-  --surface-muted: #f1f5f9;
-  --ink: var(--foreground);
-  --ink-2: #334155;
-  --muted: var(--muted-foreground);
-  --subtle: #94a3b8;
-  --border: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.16);
-  --accent: var(--accent);
-  --accent-hover: #6d28d9;
-  --success: #059669;
-  --danger: #dc2626;
-  --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 12px 32px -12px rgba(15,23,42,0.12);
+  --bg: #f5f5f7;
+  --bg-gradient: linear-gradient(180deg, #ffffff 0%, #f5f5f7 100%);
+  --surface: #ffffff;
+  --surface-strong: #f0f0f2;
+  --surface-muted: #e8e8ea;
+  --ink: #0f1011;
+  --ink-2: #2e2e2e;
+  --muted: #6a6b6b;
+  --subtle: #9f9fa0;
+  --border: rgba(15, 16, 17, 0.10);
+  --border-strong: rgba(15, 16, 17, 0.20);
+  --accent: #4b49aa;
+  --accent-hover: #847dff;
+  --success: #1a8047;
+  --danger: #c0392b;
+  --shadow-lg: rgba(15, 16, 17, 0.12) 0px 18px 20px 0px;
 }
 
 * {
@@ -89,7 +80,8 @@
 
 body {
   margin: 0;
-  font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  /* Neo-grotesque sans for UI (Source Sans 3 = Suisse Int'l substitute) */
+  font-family: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   min-height: 100dvh;
   background: var(--bg-gradient);
   color: var(--ink);
@@ -97,28 +89,31 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Display voice — whisper-weight serif (DM Serif Display = Lyon Display substitute) */
 .display {
-  font-family: 'Lexend', sans-serif;
-  letter-spacing: -0.03em;
+  font-family: 'DM Serif Display', 'Source Sans 3', serif;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
+/* Mono voice — data readouts and uppercase micro-labels */
 .mono {
-  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-family: 'Roboto Mono', 'JetBrains Mono', Menlo, monospace;
   font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Premium card base */
+/* Cards — flat, differentiated by surface color, no drop shadow */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* Deliberately no shadow — elevation comes from color steps */
 }
 
 /* Buttons */
@@ -131,15 +126,11 @@ body {
   border-radius: var(--radius-sm);
   padding: 10px 18px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   font-family: 'Source Sans 3', sans-serif;
   cursor: pointer;
-  transition: background 0.15s, opacity 0.15s, transform 0.15s;
+  transition: background-color 0.2s ease, opacity 0.2s ease, color 0.2s ease;
   white-space: nowrap;
-}
-
-.btn:hover {
-  transform: translateY(-1px);
 }
 
 .btn:disabled {
@@ -147,15 +138,17 @@ body {
   opacity: 0.5;
 }
 
+/* Primary action — white on black, the only high-contrast CTA */
 .btn-primary {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--color-pure);
+  color: var(--color-void);
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
+  background: var(--color-cloud);
 }
 
+/* Ghost — quiet secondary */
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--border);
@@ -167,16 +160,26 @@ body {
   color: var(--ink);
 }
 
-/* Pill badge */
+/* Pill — only for true chip labels/badges */
 .pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  color: var(--muted);
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--color-cloud);
+}
+
+/* Uppercase mono micro-labels */
+.eyebrow {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--subtle);
 }
