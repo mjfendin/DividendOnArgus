@@ -1,5 +1,5 @@
 [build]
-  command = "bun install --no-save && bun run build"
+  command = "npm install -g bun && bun install --no-save && bun run build"
   publish = "dist"
 
 [functions]
