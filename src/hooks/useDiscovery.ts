@@ -1,9 +1,13 @@
 /**
  * Discovery hook — Top Dividend Tokens + Leaderboard.
  * Wraps src/lib/discovery.ts with loading/error state.
+ *
+ * The initial load returns instantly with an empty-but-honest state, then
+ * enriches in the background. This keeps the dashboard responsive even when
+ * Arc RPC getLogs is slow.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   discoverDividendTokens,
   type DiscoveredToken,
@@ -18,50 +22,53 @@ export interface DiscoveryState {
   updatedAt: number | null
 }
 
-export function useDiscovery() {
-  const [state, setState] = useState<DiscoveryState>({
-    tokens: [],
-    leaderboard: [],
-    loading: false,
-    error: null,
-    updatedAt: null,
-  })
+const EMPTY_STATE: DiscoveryState = {
+  tokens: [],
+  leaderboard: [],
+  loading: false,
+  error: null,
+  updatedAt: null,
+}
 
-  const fetchDiscovery = useCallback(async (force = false) => {
+export function useDiscovery() {
+  const [state, setState] = useState<DiscoveryState>(EMPTY_STATE)
+  const scanRef = useRef<Promise<void> | null>(null)
+
+  const runScan = useCallback(async (force: boolean) => {
+    // Don't stack concurrent scans
+    if (scanRef.current) return scanRef.current
+
     setState(prev => ({ ...prev, loading: true, error: null }))
 
-    // Timeout guard: if the scan takes too long, show empty state
-    const timeout = setTimeout(() => {
-      setState(prev =>
-        prev.loading
-          ? {
-              ...prev,
-              loading: false,
-              error: 'Scan timed out. Try refreshing in a moment.',
-            }
-          : prev,
-      )
-    }, 25000)
+    const task = (async () => {
+      try {
+        const res = await discoverDividendTokens(force)
+        setState({
+          tokens: res.tokens,
+          leaderboard: res.leaderboard,
+          loading: false,
+          error: null,
+          updatedAt: res.updatedAt,
+        })
+      } catch (err) {
+        setState(prev => ({
+          ...prev,
+          loading: false,
+          error: err instanceof Error ? err.message : 'Discovery failed.',
+        }))
+      } finally {
+        scanRef.current = null
+      }
+    })()
 
-    try {
-      const res = await discoverDividendTokens(force)
-      clearTimeout(timeout)
-      setState({
-        tokens: res.tokens,
-        leaderboard: res.leaderboard,
-        loading: false,
-        error: null,
-        updatedAt: res.updatedAt,
-      })
-    } catch (err) {
-      clearTimeout(timeout)
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: err instanceof Error ? err.message : 'Discovery failed.',
-      }))
-    }
+    scanRef.current = task
+    return task
   }, [])
+
+  const fetchDiscovery = useCallback(
+    (force = false) => runScan(force),
+    [runScan],
+  )
 
   useEffect(() => {
     void fetchDiscovery(false)

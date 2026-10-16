@@ -19,8 +19,9 @@ import {
 import { scanGlobalDividendEvents, type DividendEventRecord } from './dividend-events'
 
 const SCAN_WINDOW = 100n
-const MAX_WINDOWS_PER_PORTAL = 8n // keep initial scan fast (~8 windows × 7 portals)
-const DELAY_BETWEEN_RPC_MS = 80
+const MAX_WINDOWS_PER_PORTAL = 6n // fast initial scan
+const DELAY_BETWEEN_RPC_MS = 100
+const INITIAL_PORTALS = [7, 6] // newest portals first — historical ones only on force refresh
 
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms))
 
@@ -78,11 +79,9 @@ async function decodeTokenCreatedLogs(
     })
     const out: { token: Address; poolId: string }[] = []
     for (const log of logs) {
-      // topic1 = token (indexed), topic2 = creator (indexed)
       const token = `0x${(log.topics[1] ?? '').slice(-40)}` as Address
-      // poolId is in data, first bytes32 word for v4; for v3 it's an address
       const data = log.data ?? '0x'
-      const poolId = portal.family === 'hooked-v4' ? `0x${data.slice(2, 66)}` : `0x${data.slice(2, 66)}`
+      const poolId = `0x${data.slice(2, 66)}`
       out.push({ token, poolId })
     }
     return out
@@ -123,21 +122,6 @@ function saveCache(cache: DiscoveryCache) {
   }
 }
 
-function bigintReplacer(_key: string, value: unknown) {
-  return typeof value === 'bigint' ? value.toString() : value
-}
-
-function bigintReviver(_key: string, value: unknown) {
-  if (typeof value === 'string' && /^[0-9]+$/.test(value) && value.length > 14) {
-    try {
-      return BigInt(value)
-    } catch {
-      return value
-    }
-  }
-  return value
-}
-
 // ---------------------------------------------------------------------------
 // Public discovery API
 // ---------------------------------------------------------------------------
@@ -146,25 +130,6 @@ function bigintReviver(_key: string, value: unknown) {
  * Discover Argus dividend tokens by scanning TokenCreated events across all
  * Portals (windowed) and resolving each splitter, then reading dividend logs.
  */
-// ---------------------------------------------------------------------------
-// Seed tokens — known Argus dividend tokens from prior research.
-// Used as fallback so discovery never blocks the UI with empty results.
-// ---------------------------------------------------------------------------
-const SEED_TOKENS: { token: Address; name: string; symbol: string; portalId: number }[] = [
-  {
-    token: '0xF8b688a3b2AE4793531877FE64f746b4C0f1c0b1',
-    name: 'ARCPAY',
-    symbol: 'ARCPAY',
-    portalId: 7,
-  },
-  {
-    token: '0xeCe5cA8bf9220718E5727754026757512212cb3c',
-    name: 'ARGUS',
-    symbol: 'ARGUS',
-    portalId: 7,
-  },
-]
-
 export async function discoverDividendTokens(force = false): Promise<{
   tokens: DiscoveredToken[]
   leaderboard: LeaderboardEntry[]
@@ -181,41 +146,23 @@ export async function discoverDividendTokens(force = false): Promise<{
     }
   }
 
-  // Fast path: seed with known tokens immediately — no RPC required
   const tokens = new Map<Address, DiscoveredToken>()
-  for (const seed of SEED_TOKENS) {
-    tokens.set(seed.token, {
-      token: seed.token,
-      name: seed.name,
-      symbol: seed.symbol,
-      portalId: seed.portalId,
-      splitter: null,
-      totalPaid: 0n,
-      payoutCount: 0,
-    })
-  }
+  const leaderboard = new Map<Address, LeaderboardEntry>()
 
-  if (!force) {
-    // Initial load: return seeds instantly, schedule no heavy scan.
+  const latest = await getCurrentBlock()
+  if (latest === 0n) {
     const cache: DiscoveryCache = {
       updatedAt: Date.now(),
-      tokens: Object.fromEntries(tokens),
+      tokens: {},
       leaderboard: {},
     }
     saveCache(cache)
-    return {
-      tokens: Array.from(tokens.values()),
-      leaderboard: [],
-      updatedAt: cache.updatedAt,
-    }
+    return { tokens: [], leaderboard: [], updatedAt: cache.updatedAt }
   }
 
-  // Force refresh: try on-chain enrichment, but degrade gracefully.
-  const latest = await getCurrentBlock()
-  const leaderboard = new Map<Address, LeaderboardEntry>()
+  const portalsToScan = force ? ARGUS_PORTALS : ARGUS_PORTALS.filter(p => INITIAL_PORTALS.includes(p.id))
 
-  for (const portal of ARGUS_PORTALS) {
-    // Scan recent windows (bounded) rather than full history
+  for (const portal of portalsToScan) {
     const fromBlock = latest > portal.startBlock + MAX_WINDOWS_PER_PORTAL * SCAN_WINDOW
       ? latest - MAX_WINDOWS_PER_PORTAL * SCAN_WINDOW
       : portal.startBlock
@@ -256,7 +203,6 @@ export async function discoverDividendTokens(force = false): Promise<{
             const events = await scanGlobalDividendEvents(splitter, portal.startBlock, latest)
             entry.totalPaid = events.reduce((acc, e) => acc + e.amount, 0n)
             entry.payoutCount = events.length
-            // aggregate leaderboard
             for (const e of events) {
               const lb = leaderboard.get(e.recipient) ?? {
                 address: e.recipient,

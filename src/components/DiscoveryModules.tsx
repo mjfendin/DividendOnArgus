@@ -389,10 +389,14 @@ function DiscoveryCard({
         <div style={{ fontSize: 13, color: 'var(--subtle)', padding: '20px 0' }}>
           Scanning Argus on-chain…
         </div>
+      ) : error ? (
+        <div style={{ fontSize: 13, color: 'var(--danger)', padding: '12px 0' }}>
+          {error}
+        </div>
       ) : (
         <div style={{ minHeight: 40 }}>
           {children}
-          {!loading && !error && React.Children.count(children) === 0 && (
+          {React.Children.count(children) === 0 && (
             <span style={{ fontSize: 11, color: 'var(--subtle)', display: 'block', marginTop: 8 }}>
               {emptyText}
             </span>
