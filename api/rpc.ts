@@ -13,7 +13,11 @@ const RPC_URLS = [
 export const config = { maxDuration: 60 }
 
 export default async function handler(
-  req: { method?: string; body?: unknown },
+  req: {
+    method?: string
+    body?: unknown
+    on?: (event: string, cb: (chunk: unknown) => void) => void
+  },
   res: { status: (code: number) => { json: (data: unknown) => void } },
 ): Promise<void> {
   if (req.method !== 'POST') {
@@ -21,7 +25,23 @@ export default async function handler(
     return
   }
 
-  const body = req.body
+  // Parse JSON body if not already parsed by the platform
+  let body: unknown = req.body
+  if (body === undefined && typeof req.on === 'function') {
+    body = await new Promise(resolve => {
+      const chunks: unknown[] = []
+      req.on('data', (chunk: unknown) => chunks.push(chunk))
+      req.on('end', () => {
+        try {
+          const buf = Buffer.concat(chunks as Buffer[])
+          resolve(JSON.parse(buf.toString('utf-8')))
+        } catch {
+          resolve(null)
+        }
+      })
+    })
+  }
+
   if (body === null || typeof body !== 'object') {
     res.status(400).json({ jsonrpc: '2.0', id: null, error: { code: 400, message: 'Invalid JSON body' } })
     return
