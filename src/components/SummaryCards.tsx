@@ -1,4 +1,4 @@
-import { TrendingUp, Calendar, Coins, BarChart2 } from 'lucide-react'
+import { Coins, Hourglass, CheckCircle2, Gift, TrendingUp } from 'lucide-react'
 import type { PortfolioSummary } from '../hooks/useDividendData'
 import { formatUSDCAmount } from '../hooks/useDividendData'
 
@@ -84,23 +84,23 @@ export function SummaryCards({ summary, loading }: SummaryCardsProps) {
       }}
     >
       <StatCard
-        label="Total Dividends"
+        label="Received"
         value={loading ? '...' : formatUSDCAmount(summary.totalAllTime)}
-        sublabel="All time, across all tokens"
-        icon={<Coins size={16} />}
+        sublabel="Paid to your wallet since launch"
+        icon={<Gift size={16} />}
         accent
       />
       <StatCard
         label="Last 30 Days"
         value={loading ? '...' : formatUSDCAmount(summary.total30d)}
         sublabel="Dividends earned this month"
-        icon={<Calendar size={16} />}
+        icon={<Coins size={16} />}
       />
       <StatCard
-        label="Active Tokens"
-        value={loading ? '...' : String(summary.activeDividendTokens)}
-        sublabel="Tokens with dividend history"
-        icon={<BarChart2 size={16} />}
+        label="Last 7 Days"
+        value={loading ? '...' : formatUSDCAmount(summary.total7d)}
+        sublabel="Dividends earned this week"
+        icon={<CheckCircle2 size={16} />}
       />
       <StatCard
         label="Projected Monthly"

@@ -8,6 +8,12 @@ import { IncomeChart } from './components/IncomeChart'
 import { TokenTable } from './components/TokenTable'
 import { EmptyState } from './components/EmptyState'
 import { WrongNetworkBanner } from './components/WrongNetwork'
+import { ClaimCenter } from './components/ClaimCenter'
+import {
+  DailyIncomeTicker,
+  DiscoveryGrid,
+  useWatchlist,
+} from './components/DiscoveryModules'
 import {
   useDividendData,
   useUSDCBalance,
@@ -28,8 +34,12 @@ export default function App() {
 
   const { holdings, loading, error, lastUpdated, refetch } = useDividendData(walletForData)
   const { balance: usdcBalance, loading: balanceLoading } = useUSDCBalance(walletForData)
+  const { watchlist, toggleWatch, isWatched } = useWatchlist()
 
   const summary = computeSummary(holdings)
+
+  // Daily income = total24h
+  const dailyIncome = summary.total24h
 
   // Apply theme to document
   useEffect(() => {
@@ -101,6 +111,27 @@ export default function App() {
           <EmptyState type="wrong-network" onSwitchNetwork={handleSwitchToArc} />
         )}
 
+        {/* Discovery modules — visible without wallet (public data) */}
+        <div style={{ marginBottom: 24 }}>
+          <h2
+            className="display"
+            style={{
+              fontSize: 22,
+              fontWeight: 400,
+              color: 'var(--ink)',
+              margin: '0 0 16px',
+            }}
+          >
+            Argus Dividend Discovery
+          </h2>
+          <DiscoveryGrid
+            holdings={holdings}
+            watchlist={watchlist}
+            onToggleWatch={toggleWatch}
+            isWatched={isWatched}
+          />
+        </div>
+
         {/* Connected on Arc — main content */}
         {isConnected && isOnArc && (
           <>
@@ -123,6 +154,12 @@ export default function App() {
 
             {/* Summary cards */}
             <SummaryCards summary={summary} loading={loading} />
+
+            {/* Daily passive income ticker */}
+            <DailyIncomeTicker dailyIncome={dailyIncome} loading={loading} />
+
+            {/* Claim center */}
+            <ClaimCenter holdings={holdings} />
 
             {/* Income chart */}
             <IncomeChart holdings={holdings} loading={loading} theme={theme} />
