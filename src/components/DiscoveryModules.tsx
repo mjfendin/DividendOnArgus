@@ -124,16 +124,22 @@ export function TopDividendTokens({
 }) {
   const { tokens, loading, error, refetch } = useDiscovery()
 
-  const sorted = [...tokens].sort((a, b) => (b.totalPaid > a.totalPaid ? 1 : -1)).slice(0, 5)
+  const sorted = [...tokens].sort((a, b) => {
+    // DIVIDEND flagship always first
+    if (a.symbol === 'DIVIDEND') return -1
+    if (b.symbol === 'DIVIDEND') return 1
+    // Then sort by total tax (higher tax = more dividend potential)
+    return (b.buyTaxBps ?? 0) + (b.sellTaxBps ?? 0) - ((a.buyTaxBps ?? 0) + (a.sellTaxBps ?? 0))
+  }).slice(0, 6)
 
   return (
     <DiscoveryCard
       title="Top Dividend Tokens"
-      subtitle="Tradeable launches on Argus Portal #7"
+      subtitle="Live launches on Argus — dividends accrue from trading"
       loading={loading}
       error={error}
       onRefresh={() => void refetch()}
-      emptyText="No dividend payouts discovered yet"
+      emptyText="No dividend launches discovered yet"
     >
       {sorted.map((t, i) => (
         <div
@@ -150,20 +156,35 @@ export function TopDividendTokens({
             className="display tabular"
             style={{
               fontSize: 16,
-              color: i === 0 ? 'var(--accent)' : 'var(--subtle)',
+              color: t.symbol === 'DIVIDEND' ? 'var(--accent)' : i === 0 ? 'var(--accent)' : 'var(--subtle)',
               width: 22,
             }}
           >
-            {i + 1}
+            {t.symbol === 'DIVIDEND' ? '★' : i + 1}
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
-              {t.notDeployed ? 'Launch recorded' : t.symbol}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
+                {t.notDeployed ? 'Launch recorded' : t.symbol}
+              </div>
+              <a
+                href={`https://argus.world/token/${t.token}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--accent)',
+                  textDecoration: 'none',
+                  borderBottom: '1px dashed var(--accent)',
+                }}
+              >
+                Argus ↗
+              </a>
             </div>
             <div style={{ fontSize: 12, color: 'var(--subtle)' }}>
               {t.notDeployed
                 ? `${t.token.slice(0, 6)}…${t.token.slice(-4)} — contract not yet deployed`
-                : `${t.name}`}
+                : t.name}
             </div>
           </div>
           <span
@@ -171,7 +192,7 @@ export function TopDividendTokens({
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: 'var(--accent)',
+              color: 'var(--success)',
             }}
           >
             {t.buyTaxBps !== undefined && t.sellTaxBps !== undefined
