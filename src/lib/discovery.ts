@@ -17,6 +17,7 @@ export interface DiscoveredToken {
   splitter: Address | null
   totalPaid: bigint
   payoutCount: number
+  notDeployed?: boolean
 }
 
 export interface LeaderboardEntry {
@@ -66,6 +67,7 @@ export async function discoverDividendTokens(): Promise<{
       splitter: (t.splitter as Address | null) ?? null,
       totalPaid: toBigInt(t.totalPaid),
       payoutCount: t.payoutCount,
+      notDeployed: t.notDeployed,
     })),
     leaderboard: (data.leaderboard ?? []).map(l => ({
       address: l.address as Address,

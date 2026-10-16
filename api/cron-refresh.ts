@@ -1,61 +1,54 @@
 /**
- * Cron refresh — deep-scans Argus Portals and writes the discovery cache.
- * Runs on Vercel Cron (see vercel.json) and on manual GET/POST.
+ * Cron refresh — refreshes the discovery cache.
+ * Node signature (req, res) for Vercel serverless functions.
  */
 
-import { scanArgusPortals } from './_scan'
-import { getCachedDiscovery, setCachedDiscovery } from './_kv'
+import { scanArgusPortals } from './_scan.ts'
+import { getCachedDiscovery, setCachedDiscovery } from './_kv.ts'
 
-export const config = { runtime: 'edge', maxDuration: 60 }
+export const config = { maxDuration: 60 }
 
-export default async function handler(req: Request): Promise<Response> {
+export default async function handler(
+  req: { method?: string },
+  res: { status: (code: number) => { json: (data: unknown) => void } },
+): Promise<void> {
   if (req.method !== 'GET' && req.method !== 'POST') {
-    return new Response(JSON.stringify({ ok: false, error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    res.status(405).json({ ok: false, error: 'Method not allowed' })
+    return
   }
 
   try {
     const previous = await getCachedDiscovery()
     const prevUpdatedAt = previous?.updatedAt ?? 0
 
-    // Refresh at most once per 15 minutes to avoid hammering Arc RPC
+    // Refresh at most once per 15 minutes
     if (Date.now() - prevUpdatedAt < 15 * 60 * 1000) {
-      return new Response(
-        JSON.stringify({
-          ok: true,
-          skipped: true,
-          reason: 'cache-fresh',
-          updatedAt: prevUpdatedAt,
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      )
+      res.status(200).json({
+        ok: true,
+        skipped: true,
+        reason: 'cache-fresh',
+        updatedAt: prevUpdatedAt,
+      })
+      return
     }
 
-    const result = await scanArgusPortals(30n) // deeper scan for cron (3k blocks/portal)
+    const result = await scanArgusPortals(0n)
 
     await setCachedDiscovery({
       tokens: result.tokens,
       leaderboard: result.leaderboard,
       updatedAt: Date.now(),
-      source: 'onchain-cron',
+      source: 'verified-static',
     })
 
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        tokens: result.tokens.length,
-        leaderboard: result.leaderboard.length,
-        updatedAt: Date.now(),
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } },
-    )
+    res.status(200).json({
+      ok: true,
+      tokens: result.tokens.length,
+      leaderboard: result.leaderboard.length,
+      updatedAt: Date.now(),
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return new Response(JSON.stringify({ ok: false, error: message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    res.status(500).json({ ok: false, error: message })
   }
 }

@@ -157,13 +157,24 @@ export function TopDividendTokens({
             {i + 1}
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{t.symbol}</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
+              {t.notDeployed ? 'Launch recorded' : t.symbol}
+            </div>
             <div style={{ fontSize: 12, color: 'var(--subtle)' }}>
-              {t.payoutCount} payouts
+              {t.notDeployed
+                ? `${t.token.slice(0, 6)}…${t.token.slice(-4)} — contract not yet deployed`
+                : `${t.payoutCount} payouts`}
             </div>
           </div>
-          <span className="tabular" style={{ fontSize: 14, fontWeight: 600, color: 'var(--success)' }}>
-            {formatUSDCAmount(t.totalPaid)}
+          <span
+            className="tabular"
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: t.notDeployed ? 'var(--subtle)' : 'var(--success)',
+            }}
+          >
+            {t.notDeployed ? '—' : formatUSDCAmount(t.totalPaid)}
           </span>
           <button
             onClick={() => onWatch(t.token)}
