@@ -155,6 +155,19 @@ export const BLOCKS_30D = 2_592_000n
 export const BLOCKS_7D = 604_800n
 export const BLOCKS_24H = 86_400n
 
+/**
+ * Known Argus dividend tokens. Used to seed holdings discovery so wallets
+ * that minted or received tokens before our 30-day transfer scan still show
+ * their balances and dividend figures.
+ */
+export const KNOWN_DIVIDEND_TOKENS: Address[] = [
+  '0xE9b7A558D7d46018a4A9bc32C249338D4aAEcA6e', // DIVIDEND (main)
+  '0xd96ac2f97f02845c0dd8e80aa6e3c6928583b205', // USDC (UpSide Down Cat)
+  '0x1096514f516d9ee354899cee035a335f22fee6ab', // RAMP
+  '0xecd11966a993d694ae2c12c46c2a3538378d9758', // DIETCOKE
+  '0xafff46c8bf5a6951bd34de332a9d71f3df347ac3', // DANTE
+]
+
 export async function getCurrentBlock(): Promise<bigint> {
   try {
     return await rpcClient.getBlockNumber()

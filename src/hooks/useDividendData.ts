@@ -14,6 +14,7 @@ import {
   discoverTokenAddresses,
   fetchDividendEvents,
   resolveSplitter,
+  KNOWN_DIVIDEND_TOKENS,
   BLOCKS_30D,
   BLOCKS_7D,
   BLOCKS_24H,
@@ -68,6 +69,11 @@ export function useDividendData(wallet: Address | undefined) {
       // Step 1: discover token addresses the wallet has received
       const tokenAddresses = await discoverTokenAddresses(wallet, fromBlock30d)
 
+      // Seed with known dividend tokens (covers minted/older balances)
+      for (const known of KNOWN_DIVIDEND_TOKENS) {
+        tokenAddresses.add(known)
+      }
+
       // Step 2: for each token, read info + balance + dividend figures
       const holdings: TokenHolding[] = []
 
@@ -94,10 +100,16 @@ export function useDividendData(wallet: Address | undefined) {
           received7d !== null ||
           received24h !== null
 
-        const makeFigure = (val: bigint | null): DividendFigure =>
-          val !== null
-            ? { status: 'available', value: val, decimals: USDC_DECIMALS }
+        const makeFigure = (val: bigint | null): DividendFigure => {
+          if (val !== null) return { status: 'available', value: val, decimals: USDC_DECIMALS }
+          // For known tokens with a deployed splitter but no payout events yet,
+          // show zero honestly rather than a dash — dividends simply haven't
+          // started yet.
+          const isKnown = KNOWN_DIVIDEND_TOKENS.some(k => k.toLowerCase() === tokenAddr.toLowerCase())
+          return isKnown
+            ? { status: 'available', value: 0n, decimals: USDC_DECIMALS }
             : { status: 'unavailable' }
+        }
 
         holdings.push({
           address: tokenAddr,
